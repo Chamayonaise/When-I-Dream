@@ -1,0 +1,26 @@
+// Mots de secours utilisés si l'API trouve-mot.fr est injoignable (hors ligne, quota…).
+window.FALLBACK_WORDS = [
+  'abeille','avion','arbre','ananas','araignée','ascenseur','aspirateur','astronaute','autruche','baleine',
+  'ballon','banane','bateau','bougie','boulanger','bouteille','brosse','cactus','cadeau','camion',
+  'canard','carotte','cascade','château','chapeau','chaussette','cheminée','chocolat','cirque','citron',
+  'clown','coccinelle','coffre','colline','comète','concert','coquillage','couronne','crayon','crocodile',
+  'cuisine','dauphin','désert','diamant','dinosaure','dragon','échelle','éclair','école','écureuil',
+  'éléphant','enveloppe','escalier','étoile','fantôme','fenêtre','fleur','forêt','fourchette','fromage',
+  'fusée','gâteau','girafe','glace','grenouille','guitare','hamac','hélicoptère','hérisson','hibou',
+  'horloge','igloo','île','jardin','journal','kangourou','lampe','lapin','lavabo','lion',
+  'livre','loup','lune','lunettes','magicien','maison','manège','marteau','masque','médecin',
+  'miroir','montagne','moustache','moto','musée','nuage','océan','oiseau','orage','oreiller',
+  'ours','papillon','parapluie','perroquet','phare','piano','pieuvre','pingouin','pirate','pizza',
+  'plage','pluie','pompier','pont','princesse','prison','pyramide','radeau','reine','renard',
+  'requin','robot','roi','sablier','sapin','serpent','sirène','soleil','sorcière','sous-marin',
+  'tambour','téléphone','tempête','tigre','toboggan','tortue','tour','train','trésor','trompette',
+  'tunnel','valise','vampire','vélo','violon','volcan','zèbre','aimant','ancre','arc-en-ciel',
+  'balançoire','bibliothèque','biberon','boussole','cabane','carte','ceinture','champignon','chandelle','chevalier',
+  'cloche','confiture','corde','couteau','cravate','cygne','domino','éponge','épouvantail','éventail',
+  'fée','feu','flamant','fontaine','fourmi','géant','grotte','hamburger','harpe','jongleur',
+  'kiwi','labyrinthe','lanterne','licorne','loupe','marionnette','méduse','moulin','oasis','ombre',
+  'panda','parachute','passeport','pinceau','plume','potion','poupée','puzzle','quai','raquette',
+  'ruche','sandale','savon','sifflet','squelette','statue','tapis','télescope','tente','toupie',
+  'trampoline','tracteur','vague','ventilateur','village','yaourt','zoo','épée','bijou','bonhomme de neige',
+  'arrosoir','casserole','chameau','échiquier','escargot','flûte','hippopotame','momie','parfum','sorbet'
+];
