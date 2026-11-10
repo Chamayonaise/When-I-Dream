@@ -5,27 +5,27 @@
    ========================================================================== */
 
 const API_URL = 'https://trouve-mot.fr/api/random/';
-const SAVE_KEY = 'songes.save.v1';
+const SAVE_KEY = 'songes.save.v2';
 const NAMES_KEY = 'songes.names.v1';
 const MIN_PLAYERS = 4;
 const MAX_PLAYERS = 10;
 
 const ROLES = {
-  luciole: {
-    name: 'Luciole', plural: 'Lucioles', icon: '✨', cls: 'gold',
+  fee: {
+    name: 'Fée', plural: 'Fées', icon: '🧚', cls: 'gold',
     goal: 'Tu gagnes 1 point par mot que le Rêveur devine. Donne des indices limpides !',
   },
-  cauchemar: {
-    name: 'Cauchemar', plural: 'Cauchemars', icon: '🌘', cls: 'violet',
+  croque: {
+    name: 'Croque-Mitaine', plural: 'Croque-Mitaines', icon: '👹', cls: 'violet',
     goal: 'Tu gagnes 1 point par mot raté ou passé. Égare le Rêveur… sans te faire démasquer.',
   },
-  hibou: {
-    name: 'Hibou', plural: 'Hiboux', icon: '🦉', cls: 'silver',
+  marchand: {
+    name: 'Marchand de sable', plural: 'Marchands de sable', icon: '⏳', cls: 'silver',
     goal: 'Tu gagnes si les mots devinés et ratés restent équilibrés. Aide ou brouille selon le score.',
   },
 };
 
-// Répartition des rôles selon le nombre de joueurs : [Lucioles, Cauchemars, Hiboux]
+// Répartition des rôles selon le nombre de joueurs : [Fées, Croque-Mitaines, Marchands de sable]
 const DISTRIB = {
   4: [1, 1, 2], 5: [2, 1, 2], 6: [3, 2, 1], 7: [3, 2, 2],
   8: [4, 3, 1], 9: [4, 3, 2], 10: [5, 4, 1],
@@ -233,7 +233,7 @@ function beginRound() {
   g.dreamer = (g.first + g.round) % N;
   const [l, c, h] = DISTRIB[N];
   const deck = shuffle([
-    ...Array(l).fill('luciole'), ...Array(c).fill('cauchemar'), ...Array(h).fill('hibou'),
+    ...Array(l).fill('fee'), ...Array(c).fill('croque'), ...Array(h).fill('marchand'),
   ]);
   g.roles = {};
   g.revealOrder = [];
@@ -290,18 +290,18 @@ function computeRound() {
   const B = g.night.blue.length;
   const remembered = Y > 0 && g.day.ticked.length === Y;
   const diff = Math.abs(Y - B);
-  let hibouPts, hibouWhy;
-  if (diff === 0) { hibouPts = Y + 2; hibouWhy = `Égalité parfaite : ${Y} + 2 de bonus`; }
-  else if (diff === 1) { hibouPts = Math.max(Y, B); hibouWhy = `Écart de 1 : le plus grand nombre`; }
-  else { hibouPts = Math.min(Y, B); hibouWhy = `Écart de ${diff} : le plus petit nombre`; }
+  let marchandPts, marchandWhy;
+  if (diff === 0) { marchandPts = Y + 2; marchandWhy = `Égalité parfaite : ${Y} + 2 de bonus`; }
+  else if (diff === 1) { marchandPts = Math.max(Y, B); marchandWhy = `Écart de 1 : le plus grand nombre`; }
+  else { marchandPts = Math.min(Y, B); marchandWhy = `Écart de ${diff} : le plus petit nombre`; }
   const gains = {};
   g.players.forEach((p, i) => {
     if (i === g.dreamer) gains[i] = Y + (remembered ? 2 : 0);
-    else if (g.roles[i] === 'luciole') gains[i] = Y;
-    else if (g.roles[i] === 'cauchemar') gains[i] = B;
-    else gains[i] = hibouPts;
+    else if (g.roles[i] === 'fee') gains[i] = Y;
+    else if (g.roles[i] === 'croque') gains[i] = B;
+    else gains[i] = marchandPts;
   });
-  return { Y, B, remembered, hibouPts, hibouWhy, gains };
+  return { Y, B, remembered, marchandPts, marchandWhy, gains };
 }
 
 function finishDay() {
@@ -382,7 +382,7 @@ SCREENS.setup = () => {
     <div class="panel center-text">
       <p class="small muted" style="margin-bottom:8px">Rôles en jeu à ${n} joueurs (une carte est écartée chaque manche)</p>
       <div class="distrib">
-        <span class="pill gold">✨ ${d[0]}</span><span class="pill violet">🌘 ${d[1]}</span><span class="pill silver">🦉 ${d[2]}</span>
+        <span class="pill gold">🧚 ${d[0]}</span><span class="pill violet">👹 ${d[1]}</span><span class="pill silver">⏳ ${d[2]}</span>
       </div>
     </div>
 
@@ -399,7 +399,7 @@ SCREENS.setup = () => {
     </div>
 
     <label class="check"><input type="checkbox" data-input="allowReplace" ${st.allowReplace ? 'checked' : ''}>
-      <span>Autoriser le bouton <b>« Mot obscur »</b> pour remplacer un mot inconnu de tous (sans effet sur le score).</span></label>
+      <span>Autoriser le bouton <b>« Passer le mot »</b> pour remplacer un mot bizarre ou inconnu de tous (sans effet sur le score).</span></label>
 
     <div class="push-bottom">
       <button class="btn primary big" data-action="startGame">Commencer</button>
@@ -425,9 +425,9 @@ SCREENS.roundIntro = () => {
         <p><b>${pname(g.dreamer)}</b>, ne regarde pas l'écran : les autres joueurs vont découvrir leur rôle secret, chacun son tour.</p>
       </div>
       <div class="distrib">
-        <span class="pill gold">✨ ${plural(d[0], 'Luciole', 'Lucioles')}</span>
-        <span class="pill violet">🌘 ${plural(d[1], 'Cauchemar', 'Cauchemars')}</span>
-        <span class="pill silver">🦉 ${plural(d[2], 'Hibou', 'Hiboux')}</span>
+        <span class="pill gold">🧚 ${plural(d[0], 'Fée', 'Fées')}</span>
+        <span class="pill violet">👹 ${plural(d[1], 'Croque-Mitaine', 'Croque-Mitaines')}</span>
+        <span class="pill silver">⏳ ${plural(d[2], 'Marchand de sable', 'Marchands de sable')}</span>
       </div>
       <p class="small muted">Une de ces cartes est écartée au hasard, face cachée.</p>
     </div>
@@ -513,7 +513,7 @@ SCREENS.night = () => {
     <div class="actions-row">
       <button class="btn sm ghost" data-action="undo" ${n.log.length ? '' : 'disabled'}>↶ Annuler</button>
       <button class="btn sm ghost" data-action="openPenalty">⚠ Pénalité</button>
-      ${g.allowReplace ? '<button class="btn sm ghost" data-action="replace">↻ Mot obscur</button>' : ''}
+      ${g.allowReplace ? '<button class="btn sm ghost" data-action="replace">↻ Passer le mot</button>' : ''}
     </div>
     <p class="reminder">🤫 Le Rêveur ne doit jamais savoir si sa réponse était juste.</p>
   </main>`;
@@ -563,7 +563,7 @@ SCREENS.reveal = () => {
           return `<li><span class="ricon">🌙</span><span class="rmain"><b>${pname(i)}</b><span>Rêveur · ${r.Y} mot${r.Y > 1 ? 's' : ''}${r.remembered ? ' + 2 (tout cité)' : ''}</span></span><span class="gain">+${r.gains[i]}</span></li>`;
         }
         const role = ROLES[g.roles[i]];
-        const why = g.roles[i] === 'luciole' ? 'mots devinés' : g.roles[i] === 'cauchemar' ? 'mots ratés' : r.hibouWhy;
+        const why = g.roles[i] === 'fee' ? 'mots devinés' : g.roles[i] === 'croque' ? 'mots ratés' : r.marchandWhy;
         return `<li><span class="ricon">${role.icon}</span><span class="rmain"><b>${pname(i)}</b><span>${role.name} · ${esc(why)}</span></span><span class="gain">+${r.gains[i]}</span></li>`;
       }).join('')}
     </ul>
@@ -632,17 +632,17 @@ SCREENS.rules = () => `<main class="screen">
     <div class="panel">
       <h3>Les rôles</h3>
       <ul>
-        <li><b>✨ Luciole</b> : +1 point par mot deviné.</li>
-        <li><b>🌘 Cauchemar</b> : +1 point par mot raté ou passé.</li>
-        <li><b>🦉 Hibou</b> : compare les deux piles. Égalité → nombre de mots devinés + 2. Écart de 1 → le plus grand des deux nombres. Écart de 2 ou plus → le plus petit.</li>
+        <li><b>🧚 Fée</b> : +1 point par mot deviné.</li>
+        <li><b>👹 Croque-Mitaine</b> : +1 point par mot raté ou passé.</li>
+        <li><b>⏳ Marchand de sable</b> : compare les deux piles. Égalité → nombre de mots devinés + 2. Écart de 1 → le plus grand des deux nombres. Écart de 2 ou plus → le plus petit.</li>
         <li><b>🌙 Rêveur</b> : +1 point par mot deviné, et +2 s'il cite <b>tous</b> les mots devinés dans son récit.</li>
       </ul>
       <table class="distrib-table" style="margin-top:12px">
         <thead><tr><th>Joueurs</th>${Object.keys(DISTRIB).map((k) => `<th>${k}</th>`).join('')}</tr></thead>
         <tbody>
-          <tr><td>✨</td>${Object.values(DISTRIB).map((d) => `<td>${d[0]}</td>`).join('')}</tr>
-          <tr><td>🌘</td>${Object.values(DISTRIB).map((d) => `<td>${d[1]}</td>`).join('')}</tr>
-          <tr><td>🦉</td>${Object.values(DISTRIB).map((d) => `<td>${d[2]}</td>`).join('')}</tr>
+          <tr><td>🧚</td>${Object.values(DISTRIB).map((d) => `<td>${d[0]}</td>`).join('')}</tr>
+          <tr><td>👹</td>${Object.values(DISTRIB).map((d) => `<td>${d[1]}</td>`).join('')}</tr>
+          <tr><td>⏳</td>${Object.values(DISTRIB).map((d) => `<td>${d[2]}</td>`).join('')}</tr>
         </tbody>
       </table>
       <p class="small muted" style="margin-top:8px">Chaque manche, les rôles sont redistribués ; une carte reste écartée face cachée.</p>

@@ -182,7 +182,7 @@ p { margin: 0; }
 }
 @keyframes flip { from { transform: rotateY(90deg); opacity: 0; } to { transform: none; opacity: 1; } }
 .role-card .emoji { font-size: 5rem; }
-.role-card .rname { font-family: var(--font-title); font-size: 2.2rem; }
+.role-card .rname { font-family: var(--font-title); font-size: 2.2rem; text-align: center; padding: 0 16px; line-height: 1.1; }
 .role-card.gold { background: radial-gradient(circle at 50% 30%, #6b5212, #2c2208); border-color: var(--gold); color: var(--gold-2); }
 .role-card.violet { background: radial-gradient(circle at 50% 30%, #3b2f9a, #15113d); border-color: var(--violet); color: #d8d2ff; }
 .role-card.silver { background: radial-gradient(circle at 50% 30%, #4b5470, #1b1f2e); border-color: var(--silver); color: #eef1fb; }

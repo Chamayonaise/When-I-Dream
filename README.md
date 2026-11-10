@@ -10,9 +10,9 @@ Jeu d'ambiance de mots pour 4 à 10 joueurs, sur **un seul téléphone** qu'on s
 
 | Rôle | Gagne… |
 |---|---|
-| ✨ Luciole | 1 point par mot deviné |
-| 🌘 Cauchemar | 1 point par mot raté ou passé |
-| 🦉 Hibou | si les deux piles restent équilibrées (égalité : devinés + 2 ; écart de 1 : le plus grand ; écart ≥ 2 : le plus petit) |
+| 🧚 Fée | 1 point par mot deviné |
+| 👹 Croque-Mitaine | 1 point par mot raté ou passé |
+| ⏳ Marchand de sable | si les deux piles restent équilibrées (égalité : devinés + 2 ; écart de 1 : le plus grand ; écart ≥ 2 : le plus petit) |
 | 🌙 Rêveur | 1 point par mot deviné, +2 s'il les cite tous dans son récit |
 
 L'application gère : distribution secrète des rôles, minuteur de la Nuit (son + vibration à la fin), boutons ✓ / ✗ discrets, annulation, pénalités, récit du Jour avec cases à cocher, calcul des scores et classement final (égalité départagée par les pénalités).
