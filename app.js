@@ -882,8 +882,23 @@ $app.addEventListener('click', (e) => {
   // Un clic dans une feuille modale ne doit pas fermer l'overlay
   if (el.classList.contains('overlay') && e.target.closest('[data-stop]')) return;
   const fn = A[el.dataset.action];
-  if (fn) fn(el, e);
+  if (!fn) return;
+  // L'écran est redessiné après l'action : on retrouve le bouton équivalent pour y jouer l'animation d'appui
+  const sel = `[data-action="${el.dataset.action}"]${el.dataset.side != null ? `[data-side="${el.dataset.side}"]` : ''}`;
+  fn(el, e);
+  pressFx(el.isConnected ? el : $app.querySelector(sel));
 });
+
+function pressFx(btn) {
+  if (!btn || !btn.classList.contains('btn')) return;
+  btn.classList.remove('pressed');
+  void btn.offsetWidth; // relance l'animation si on retape vite
+  btn.classList.add('pressed');
+  btn.addEventListener('animationend', () => btn.classList.remove('pressed'), { once: true });
+}
+
+// Active les états :active au toucher sur iOS
+document.addEventListener('touchstart', () => {}, { passive: true });
 
 $app.addEventListener('input', (e) => {
   const el = e.target;

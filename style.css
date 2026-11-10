@@ -108,6 +108,15 @@ p { margin: 0; }
   text-decoration: none; width: 100%;
 }
 .btn:active { transform: scale(0.97); }
+.btn { --ring: rgba(255, 255, 255, 0.45); }
+.btn.primary { --ring: rgba(245, 196, 81, 0.75); }
+.btn.violet { --ring: rgba(122, 108, 242, 0.8); }
+.btn.pressed { animation: press 0.38s ease-out; }
+@keyframes press {
+  0% { transform: scale(0.93); filter: brightness(1.25); box-shadow: 0 0 0 0 var(--ring); }
+  60% { transform: scale(1.02); }
+  100% { transform: none; filter: none; box-shadow: 0 0 0 16px transparent; }
+}
 .btn:disabled { opacity: 0.4; pointer-events: none; }
 .btn.primary { background: linear-gradient(180deg, var(--gold-2), var(--gold)); color: var(--gold-ink); border-color: transparent; box-shadow: 0 6px 22px rgba(245, 196, 81, 0.3); }
 .btn.violet { background: linear-gradient(180deg, var(--violet), var(--violet-2)); color: #fff; border-color: transparent; }
@@ -318,4 +327,6 @@ table.distrib-table { width: 100%; border-collapse: collapse; font-size: 0.9rem;
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+  .btn.pressed { animation: pressFlash 0.3s ease-out !important; }
 }
+@keyframes pressFlash { 0% { filter: brightness(1.35); } 100% { filter: none; } }
