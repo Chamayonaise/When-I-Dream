@@ -26,8 +26,9 @@ const ROLES = {
 };
 
 // Répartition des rôles selon le nombre de joueurs : [Fées, Croque-Mitaines, Marchands de sable]
+// Si le total vaut N, une carte est écartée chaque manche ; s'il vaut N−1, aucune.
 const DISTRIB = {
-  4: [1, 1, 2], 5: [2, 1, 2], 6: [3, 2, 1], 7: [3, 2, 2],
+  4: [2, 1, 0], 5: [2, 1, 1], 6: [3, 2, 1], 7: [3, 2, 2],
   8: [4, 3, 1], 9: [4, 3, 2], 10: [5, 4, 1],
 };
 
@@ -242,7 +243,7 @@ function beginRound() {
     g.revealOrder.push(p);
     g.roles[p] = deck.pop();
   }
-  g.discarded = deck.pop();
+  g.discarded = deck.pop() ?? null;
   g.revealPos = 0;
   g.revealShown = false;
   g.night = null;
@@ -380,7 +381,7 @@ SCREENS.setup = () => {
     <button class="btn ghost" data-action="addPlayer" ${n >= MAX_PLAYERS ? 'disabled' : ''}>+ Ajouter un joueur</button>
 
     <div class="panel center-text">
-      <p class="small muted" style="margin-bottom:8px">Rôles en jeu à ${n} joueurs (une carte est écartée chaque manche)</p>
+      <p class="small muted" style="margin-bottom:8px">Rôles en jeu à ${n} joueurs${d[0] + d[1] + d[2] > n - 1 ? ' (une carte est écartée chaque manche)' : ''}</p>
       <div class="distrib">
         <span class="pill gold">🧚 ${d[0]}</span><span class="pill violet">👹 ${d[1]}</span><span class="pill silver">⏳ ${d[2]}</span>
       </div>
@@ -427,9 +428,9 @@ SCREENS.roundIntro = () => {
       <div class="distrib">
         <span class="pill gold">🧚 ${plural(d[0], 'Fée', 'Fées')}</span>
         <span class="pill violet">👹 ${plural(d[1], 'Croque-Mitaine', 'Croque-Mitaines')}</span>
-        <span class="pill silver">⏳ ${plural(d[2], 'Marchand de sable', 'Marchands de sable')}</span>
+        ${d[2] ? `<span class="pill silver">⏳ ${plural(d[2], 'Marchand de sable', 'Marchands de sable')}</span>` : ''}
       </div>
-      <p class="small muted">Une de ces cartes est écartée au hasard, face cachée.</p>
+      ${d[0] + d[1] + d[2] > g.players.length - 1 ? '<p class="small muted">Une de ces cartes est écartée au hasard, face cachée.</p>' : ''}
     </div>
     <div class="push-bottom">
       <button class="btn primary big" data-action="startReveal">Distribuer les rôles</button>
@@ -567,7 +568,7 @@ SCREENS.reveal = () => {
         return `<li><span class="ricon">${role.icon}</span><span class="rmain"><b>${pname(i)}</b><span>${role.name} · ${esc(why)}</span></span><span class="gain">+${r.gains[i]}</span></li>`;
       }).join('')}
     </ul>
-    <p class="small muted center-text">Carte écartée : ${ROLES[g.discarded].icon} ${ROLES[g.discarded].name}</p>
+    ${g.discarded ? `<p class="small muted center-text">Carte écartée : ${ROLES[g.discarded].icon} ${ROLES[g.discarded].name}</p>` : ''}
     ${n.pens.length ? `<div class="panel"><h3>Pénalités (−1 en fin de partie)</h3>
       <div class="word-chips">${n.pens.map((p) => `<span class="word-chip pen">${pname(p.player)} · ${esc(cap(p.word.name))}</span>`).join('')}</div></div>` : ''}
     <div class="push-bottom">
@@ -645,7 +646,7 @@ SCREENS.rules = () => `<main class="screen">
           <tr><td>⏳</td>${Object.values(DISTRIB).map((d) => `<td>${d[2]}</td>`).join('')}</tr>
         </tbody>
       </table>
-      <p class="small muted" style="margin-top:8px">Chaque manche, les rôles sont redistribués ; une carte reste écartée face cachée.</p>
+      <p class="small muted" style="margin-top:8px">Chaque manche, les rôles sont redistribués ; à partir de 6 joueurs, une carte reste écartée face cachée.</p>
     </div>
     <div class="panel">
       <h3>La Nuit (2 minutes)</h3>
