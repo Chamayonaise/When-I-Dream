@@ -31,6 +31,11 @@ const DISTRIB = {
   4: [2, 1, 0], 5: [2, 1, 1], 6: [3, 2, 1], 7: [3, 2, 2],
   8: [4, 3, 1], 9: [4, 3, 2], 10: [5, 4, 1],
 };
+const ROLE_KEYS = ['fee', 'croque', 'marchand'];
+const distribTotal = (d) => d[0] + d[1] + d[2];
+// Une répartition est valide si elle compte N−1 cartes (aucune écartée) ou N (une écartée).
+const distribValid = (d, n) => distribTotal(d) >= n - 1 && distribTotal(d) <= n;
+const setupDistrib = (st) => (st.customRoles && st.custom ? st.custom : DISTRIB[st.names.length]);
 
 /* ---------- Utilitaires ---------- */
 const $app = document.getElementById('app');
@@ -193,11 +198,16 @@ function unuse(word) {
 function newSetup() {
   const names = store.get(NAMES_KEY);
   const list = Array.isArray(names) && names.length >= MIN_PLAYERS ? names.slice(0, MAX_PLAYERS) : ['', '', '', ''];
-  return { names: list, first: 0, duration: 120, allowReplace: true };
+  return { names: list, first: 0, duration: 120, allowReplace: true, customRoles: false, custom: null };
 }
 
 async function startGame() {
   const st = S.setup;
+  const distrib = setupDistrib(st).slice();
+  if (!distribValid(distrib, st.names.length)) {
+    toast(`Il faut entre ${st.names.length - 1} et ${st.names.length} cartes rôle.`);
+    return;
+  }
   const used = new Set();
   const names = st.names.map((n, i) => {
     let base = n.trim() || `Joueur ${i + 1}`;
@@ -213,6 +223,7 @@ async function startGame() {
     round: 0,
     duration: st.duration,
     allowReplace: st.allowReplace,
+    distrib,
     dreamer: 0, roles: {}, discarded: null,
     revealOrder: [], revealPos: 0, revealShown: false,
     queue: [], used: [], online: null,
@@ -232,7 +243,7 @@ function beginRound() {
   const g = S.game;
   const N = g.players.length;
   g.dreamer = (g.first + g.round) % N;
-  const [l, c, h] = DISTRIB[N];
+  const [l, c, h] = g.distrib || DISTRIB[N];
   const deck = shuffle([
     ...Array(l).fill('fee'), ...Array(c).fill('croque'), ...Array(h).fill('marchand'),
   ]);
@@ -367,7 +378,9 @@ SCREENS.home = () => {
 SCREENS.setup = () => {
   const st = S.setup;
   const n = st.names.length;
-  const d = DISTRIB[n];
+  const d = setupDistrib(st);
+  const total = distribTotal(d);
+  const valid = distribValid(d, n);
   return `<main class="screen">
     ${topBar('Nouvelle partie', { back: 'home', menu: false })}
     <p class="muted">Entrez les joueurs <b>dans le sens des aiguilles d'une montre</b> autour de la table.</p>
@@ -380,11 +393,21 @@ SCREENS.setup = () => {
     </ol>
     <button class="btn ghost" data-action="addPlayer" ${n >= MAX_PLAYERS ? 'disabled' : ''}>+ Ajouter un joueur</button>
 
-    <div class="panel center-text">
-      <p class="small muted" style="margin-bottom:8px">Rôles en jeu à ${n} joueurs${d[0] + d[1] + d[2] > n - 1 ? ' (une carte est écartée chaque manche)' : ''}</p>
-      <div class="distrib">
+    <div class="panel">
+      <p class="small muted center-text" style="margin-bottom:8px">Rôles en jeu à ${n} joueurs${valid && total === n ? ' (une carte est écartée chaque manche)' : ''}</p>
+      ${st.customRoles ? `<div class="role-steps">
+        ${ROLE_KEYS.map((k, i) => `<div class="role-step ${ROLES[k].cls}">
+          <span class="rs-name">${ROLES[k].icon} ${ROLES[k].plural}</span>
+          <button class="icon-btn" data-action="roleStep" data-role="${i}" data-delta="-1" ${d[i] <= 0 ? 'disabled' : ''} aria-label="Retirer un rôle ${ROLES[k].name}">−</button>
+          <span class="rs-count" aria-live="polite">${d[i]}</span>
+          <button class="icon-btn" data-action="roleStep" data-role="${i}" data-delta="1" ${total >= n ? 'disabled' : ''} aria-label="Ajouter un rôle ${ROLES[k].name}">+</button>
+        </div>`).join('')}
+        <p class="small center-text ${valid ? 'muted' : 'warn'}">Total : ${total} carte${total > 1 ? 's' : ''} — il en faut ${n - 1} (aucune écartée) ou ${n} (une écartée).</p>
+      </div>` : `<div class="distrib">
         <span class="pill gold">🧚 ${d[0]}</span><span class="pill violet">👹 ${d[1]}</span><span class="pill silver">⏳ ${d[2]}</span>
-      </div>
+      </div>`}
+      <label class="check" style="margin-top:12px"><input type="checkbox" data-input="customRoles" ${st.customRoles ? 'checked' : ''}>
+        <span>Répartition personnalisée</span></label>
     </div>
 
     <label class="field">Premier Rêveur <span class="small muted" style="font-weight:400">(traditionnellement, le plus âgé)</span>
@@ -403,7 +426,7 @@ SCREENS.setup = () => {
       <span>Autoriser le bouton <b>« Passer le mot »</b> pour remplacer un mot bizarre ou inconnu de tous (sans effet sur le score).</span></label>
 
     <div class="push-bottom">
-      <button class="btn primary big" data-action="startGame">Commencer</button>
+      <button class="btn primary big" data-action="startGame" ${valid ? '' : 'disabled'}>Commencer</button>
     </div>
   </main>`;
 };
@@ -415,7 +438,7 @@ SCREENS.loading = () => `<main class="screen center">
 
 SCREENS.roundIntro = () => {
   const g = S.game;
-  const d = DISTRIB[g.players.length];
+  const d = g.distrib || DISTRIB[g.players.length];
   return `<main class="screen">
     ${topBar(roundTag())}
     <div class="grow center-text" style="display:flex;flex-direction:column;justify-content:center;gap:14px">
@@ -646,7 +669,7 @@ SCREENS.rules = () => `<main class="screen">
           <tr><td>⏳</td>${Object.values(DISTRIB).map((d) => `<td>${d[2]}</td>`).join('')}</tr>
         </tbody>
       </table>
-      <p class="small muted" style="margin-top:8px">Chaque manche, les rôles sont redistribués ; à partir de 6 joueurs, une carte reste écartée face cachée.</p>
+      <p class="small muted" style="margin-top:8px">Répartition par défaut. Chaque manche, les rôles sont redistribués ; à partir de 6 joueurs, une carte reste écartée face cachée. Une répartition personnalisée (N−1 ou N cartes) peut être choisie en début de partie.</p>
     </div>
     <div class="panel">
       <h3>La Nuit (2 minutes)</h3>
@@ -773,6 +796,14 @@ const A = {
     S.setup.names.splice(i, 1);
     if (S.setup.first >= S.setup.names.length || S.setup.first === i) S.setup.first = 0;
     else if (S.setup.first > i) S.setup.first--;
+    render();
+  },
+  roleStep: (el) => {
+    const st = S.setup;
+    const i = +el.dataset.role;
+    const next = st.custom[i] + +el.dataset.delta;
+    if (next < 0 || (+el.dataset.delta > 0 && distribTotal(st.custom) >= st.names.length)) return;
+    st.custom[i] = next;
     render();
   },
   startGame: () => startGame(),
@@ -920,6 +951,11 @@ $app.addEventListener('change', (e) => {
   if (key === 'first') S.setup.first = +el.value;
   if (key === 'duration') S.setup.duration = +el.value;
   if (key === 'allowReplace') S.setup.allowReplace = el.checked;
+  if (key === 'customRoles') {
+    S.setup.customRoles = el.checked;
+    if (el.checked && !S.setup.custom) S.setup.custom = DISTRIB[S.setup.names.length].slice();
+    render();
+  }
 });
 
 $app.addEventListener('keydown', (e) => {
