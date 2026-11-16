@@ -1,3 +1,6 @@
 regle.pdf
 *.pdf
 .DS_Store
+
+# Listes de mots copiées depuis des sites tiers (usage local uniquement)
+ressources/

@@ -1,4 +1,4 @@
-// Mots de secours utilisés si l'API trouve-mot.fr est injoignable (hors ligne, quota…).
+// Liste de mots écrite à la main, fusionnée avec words.js (doublons retirés au chargement).
 window.FALLBACK_WORDS = [
   'abeille','avion','arbre','ananas','araignée','ascenseur','aspirateur','astronaute','autruche','baleine',
   'ballon','banane','bateau','bougie','boulanger','bouteille','brosse','cactus','cadeau','camion',

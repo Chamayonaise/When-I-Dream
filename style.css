@@ -321,8 +321,6 @@ table.distrib-table { width: 100%; border-collapse: collapse; font-size: 0.9rem;
 }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-.status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #5bd18b; margin-right: 6px; vertical-align: middle; }
-.status-dot.off { background: #f0a14a; }
 
 .loader { width: 54px; height: 54px; border-radius: 50%; margin: 0 auto; border: 4px solid rgba(255, 255, 255, 0.15); border-top-color: var(--gold); animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }

@@ -4,7 +4,6 @@
    Songes — jeu d'ambiance de mots en « passe-le-téléphone »
    ========================================================================== */
 
-const API_URL = 'https://trouve-mot.fr/api/random/';
 const SAVE_KEY = 'songes.save.v2';
 const NAMES_KEY = 'songes.names.v1';
 const MIN_PLAYERS = 4;
@@ -43,10 +42,21 @@ const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '
 const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 const fmt = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
+// Entier uniforme dans [0, n[ : générateur cryptographique du navigateur, sans biais (rejet)
+function randInt(n) {
+  if (window.crypto?.getRandomValues) {
+    const buf = new Uint32Array(1);
+    const limit = 0x100000000 - (0x100000000 % n);
+    do crypto.getRandomValues(buf); while (buf[0] >= limit);
+    return buf[0] % n;
+  }
+  return Math.floor(Math.random() * n);
+}
+// Mélange de Fisher-Yates : toutes les permutations sont équiprobables
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = randInt(i + 1);
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
@@ -138,60 +148,34 @@ function go(screen) {
   window.scrollTo(0, 0);
 }
 
-/* ---------- Mots (API trouve-mot.fr + secours) ---------- */
-let refilling = null;
-function prettyCat(c) {
-  if (!c) return '';
-  const s = String(c).toLowerCase().replace(/\s+/g, ' ').trim();
-  return cap(s);
+/* ---------- Mots (pioche mélangée, sans remise) ---------- */
+// Chaque partie mélange toute la liste au hasard puis pioche dedans : aucun mot ne revient
+// dans une même partie, et l'ordre est retiré à neuf à chaque nouvelle partie.
+// Fusion des deux listes (words.js + words-fallback.js), sans doublon
+function allWords() {
+  const lists = [...(window.WORDS || []), ...(window.FALLBACK_WORDS || [])];
+  return [...new Set(lists.map((w) => String(w).trim().toLowerCase()).filter(Boolean))];
 }
-function refill(count = 40) {
-  if (refilling) return refilling;
-  refilling = (async () => {
-    const g = S.game;
-    if (!g) return;
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 6000);
-    try {
-      const res = await fetch(API_URL + count, { signal: ctrl.signal, cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const seen = new Set([...g.used, ...g.queue.map((w) => w.name)]);
-      for (const it of Array.isArray(data) ? data : []) {
-        const name = String(it?.name ?? '').trim().toLowerCase();
-        if (name.length < 3 || /\d/.test(name) || seen.has(name)) continue;
-        seen.add(name);
-        g.queue.push({ name, cat: prettyCat(it.categorie) });
-      }
-      g.online = true;
-    } catch {
-      g.online = false;
-    } finally {
-      clearTimeout(timer);
-      refilling = null;
-      save();
-    }
-  })();
-  return refilling;
+function newDeck(exclude = []) {
+  const ex = new Set(exclude);
+  return shuffle(allWords().filter((w) => !ex.has(w)));
 }
 function drawWord() {
   const g = S.game;
-  let w = g.queue.shift();
-  if (!w) {
-    const used = new Set(g.used);
-    const pool = window.FALLBACK_WORDS.filter((x) => !used.has(x));
-    const src = pool.length ? pool : window.FALLBACK_WORDS;
-    w = { name: src[Math.floor(Math.random() * src.length)], cat: '' };
-  }
-  g.used.push(w.name);
-  if (g.queue.length < 12) refill();
-  return w;
+  // Sauvegarde d'une ancienne version (file de l'API) : on reconstruit la pioche
+  if (!Array.isArray(g.deck)) { g.deck = newDeck(g.used || []); delete g.queue; delete g.online; }
+  if (!Array.isArray(g.used)) g.used = [];
+  // Liste entièrement épuisée (très longue partie) : on remélange tout
+  if (!g.deck.length) g.deck = newDeck(g.night?.word ? [g.night.word.name] : []);
+  const name = g.deck.pop();
+  g.used.push(name);
+  return { name };
 }
 function unuse(word) {
   const g = S.game;
   const i = g.used.lastIndexOf(word.name);
   if (i >= 0) g.used.splice(i, 1);
-  g.queue.unshift(word);
+  g.deck.push(word.name); // remis sur le dessus : c'est le prochain mot pioché
 }
 
 /* ---------- Logique de partie ---------- */
@@ -201,7 +185,7 @@ function newSetup() {
   return { names: list, first: 0, duration: 120, allowReplace: true, customRoles: false, custom: null };
 }
 
-async function startGame() {
+function startGame() {
   const st = S.setup;
   const distrib = setupDistrib(st).slice();
   if (!distribValid(distrib, st.names.length)) {
@@ -226,16 +210,11 @@ async function startGame() {
     distrib,
     dreamer: 0, roles: {}, discarded: null,
     revealOrder: [], revealPos: 0, revealShown: false,
-    queue: [], used: [], online: null,
+    deck: newDeck(), used: [],
     night: null, day: null, history: [],
   };
   unlockAudio();
   keepAwake();
-  S.loadingMsg = 'Les rêves se préparent…';
-  S.screen = 'loading';
-  render();
-  await refill(50);
-  if (!S.game.online) toast('Mode hors ligne : mots de secours utilisés.', 3500);
   beginRound();
 }
 
@@ -686,7 +665,7 @@ SCREENS.rules = () => `<main class="screen">
       <h3>Fin de partie</h3>
       <p>Quand tout le monde a été Rêveur une fois, on retire 1 point par pénalité. Le plus haut total gagne ; en cas d'égalité, le joueur avec le moins de pénalités l'emporte, sinon la victoire est partagée.</p>
     </div>
-    <p class="small muted center-text">Mots aléatoires fournis par l'API gratuite <a href="https://trouve-mot.fr" target="_blank" rel="noopener" style="color:inherit">trouve-mot.fr</a>.</p>
+    <p class="small muted center-text">Liste de mots issue du dictionnaire pour enfants de <a href="https://www.motsaleatoires.com" target="_blank" rel="noopener" style="color:inherit">motsaleatoires.com</a>.</p>
   </div>
 </main>`;
 
@@ -706,7 +685,6 @@ function renderModal() {
     return `<div class="overlay" data-action="closeModal"><div class="sheet" data-stop>
       <h3>Partie en cours · ${roundTag()}</h3>
       <div class="mini-scores">${ranking().map((p) => `<div><span>${esc(p.name)}</span><span>${p.score}${p.pen ? ` <span style="color:var(--danger)">−${p.pen}</span>` : ''}</span></div>`).join('')}</div>
-      <p class="small muted"><span class="status-dot ${g.online === false ? 'off' : ''}"></span>${g.online === false ? 'Hors ligne : mots de secours' : 'Mots : trouve-mot.fr'}</p>
       <button class="btn" data-action="showRules">Règles du jeu</button>
       <button class="btn ghost" data-action="confirmQuit" style="color:var(--danger)">Abandonner la partie</button>
       <button class="btn primary" data-action="closeModal">Fermer</button>

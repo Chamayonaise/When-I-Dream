@@ -22,7 +22,7 @@ Les règles complètes sont accessibles dans l'application.
 ## Technique
 
 - Site 100 % statique (HTML / CSS / JS, aucune dépendance ni build) — hébergé sur GitHub Pages.
-- Mots aléatoires en français via l'API gratuite [trouve-mot.fr](https://trouve-mot.fr) (`/api/random/50`), avec une liste de secours hors ligne (`words-fallback.js`).
+- 636 mots simples : `words.js` (dictionnaire pour enfants de [motsaleatoires.com](https://www.motsaleatoires.com)) fusionné avec `words-fallback.js` (liste maison), doublons retirés. Chaque partie mélange toute la liste au hasard (Fisher-Yates + `crypto.getRandomValues`) et pioche sans remise — aucun mot répété dans une partie, ordre différent à chaque partie, fonctionne hors ligne.
 - Partie sauvegardée dans le navigateur (`localStorage`) : on peut recharger la page sans perdre les scores.
 - Écran maintenu allumé pendant la partie (Wake Lock API) ; installable sur l'écran d'accueil.
 
